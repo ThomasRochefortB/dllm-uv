@@ -17,6 +17,15 @@ import torch
 import transformers
 
 
+def get_default_torch_device() -> str:
+    """Return the preferred runtime device in priority order: CUDA, MPS, then CPU."""
+    if torch.cuda.is_available():
+        return "cuda"
+    if hasattr(torch.backends, "mps") and torch.backends.mps.is_available():
+        return "mps"
+    return "cpu"
+
+
 def resolve_with_base_env(path: str, env_name: str) -> str:
     """
     If `env_name` is set and `path` is NOT absolute, NOT a URL/scheme,
@@ -58,7 +67,11 @@ def init_device_context_manager(device: str | torch.device | None = None):
             idx = PartialState().local_process_index
         except Exception:
             idx = 0
-        device = f"cuda:{idx}" if torch.cuda.is_available() else "cpu"
+        default_device = get_default_torch_device()
+        if default_device == "cuda":
+            device = f"cuda:{idx}"
+        else:
+            device = default_device
     elif isinstance(device, int):
         device = f"cuda:{device}"
 

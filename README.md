@@ -1,5 +1,8 @@
 <h1 align="center">dLLM</h1>
 
+> This is a forked version of dLLM with UV-based dependency management.
+> Use `uv` (`uv lock`, `uv sync`, and dependency groups) for reproducible installs.
+
 <p align="center">
 Simple Diffusion Language Modeling
 </p>
@@ -90,26 +93,30 @@ Simple Diffusion Language Modeling
 ## Setup
 ### Installation
 ```bash
-# create and activate conda environment
-conda create -n dllm python=3.10 -y
-conda activate dllm
+# create and activate a uv-managed environment
+uv venv --python 3.12
+source .venv/bin/activate
 
-# install pytorch with CUDA 12.4 (other pytorch/cuda versions should also work)
-conda install cuda=12.4 -c nvidia
-pip install torch==2.6.0 torchvision==0.21.0 torchaudio==2.6.0 \
-    --index-url https://download.pytorch.org/whl/cu124
+# (If you already created an env with Python 3.13, recreate it with 3.12 to avoid
+# a source build of sentencepiece requiring system build tools.)
 
-# install dllm package
-pip install -e .
+# install core project dependencies
+# (Torch packages are configured in pyproject.toml:
+# - Linux/Windows: CUDA 12.4 wheels via PyTorch index
+# - macOS: CPU wheels from default index
+uv sync
+
+# install optional dependency group
+uv sync --group optional
 ```
 ### (optional) Evaluation setup
 
 ```bash
-# initialize `lm-evaluation-harness` submodule
-git submodule update --init --recursive
+# install lm-evaluation-harness from uv dependency group
+uv sync --group evaluation
 
-# install submodule in editable mode with IFEval & Math dependencies
-pip install -e "lm-evaluation-harness[ifeval,math]"
+# (optional) install all non-default dependency groups at once:
+# uv sync --all-groups
 ```
 
 ### (optional) Slurm setup
@@ -303,10 +310,13 @@ You can also try interactive chat script (for example, [`examples/llada/chat.py`
 ```shell
 python -u examples/llada/chat.py --model_name_or_path "GSAI-ML/LLaDA-8B-Instruct"
 ```
+python -u examples/llada/chat.py --model_name_or_path "dllm-hub/Qwen3-0.6B-diffusion-mdlm-v0.1"
+
+dllm-hub/Qwen3-0.6B-diffusion-bd3lm-v0.1
 
 You can accelerate inference of [LLaDA](https://arxiv.org/abs/2502.09992) and [Dream](https://arxiv.org/abs/2508.15487) with [Fast-dLLM](https://arxiv.org/abs/2505.22618).
 ```shell
-python examples/fastdllm/llada/sample.py --model_name_or_path "GSAI-ML/LLaDA-8B-Instruct" --use_cache prefix --threshold 0.9
+python examples/fastdllm/llada/sample.py --model_name_or_path "dllm-hub/Qwen3-0.6B-diffusion-mdlm-v0.1" --use_cache prefix --threshold 0.9
 ```
 
 <p align="center">

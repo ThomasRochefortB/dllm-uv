@@ -6,7 +6,12 @@ import transformers
 from peft import prepare_model_for_kbit_training
 
 from dllm.utils.configs import ModelArguments, TrainingArguments
-from dllm.utils.utils import disable_caching_allocator_warmup, load_peft, print_main
+from dllm.utils.utils import (
+    disable_caching_allocator_warmup,
+    get_default_torch_device,
+    load_peft,
+    print_main,
+)
 
 
 def get_model(
@@ -36,6 +41,7 @@ def get_model(
     attn_implementation = kwargs.get(
         "attn_implementation", getattr(model_args, "attn_implementation", None)
     )
+    target_device = kwargs.get("device", get_default_torch_device())
 
     # Device map: skip when ZeRO-3
     device_map = (
@@ -75,6 +81,8 @@ def get_model(
 
     # Optionally train with lora
     model = load_peft(model, model_args)
+    if device_map is None and not load_in_4bit:
+        model = model.to(target_device)
 
     return model
 

@@ -10,7 +10,7 @@ name = "dllm"
 version = "0.1.0"
 description = "dLLM: Simple Diffusion Language Modeling"
 readme = "README.md"
-requires-python = ">=3.10"
+requires-python = ">=3.10,<3.13"
 dependencies = [
     "transformers==4.57.0",
     "accelerate==1.11.0",
@@ -23,17 +23,40 @@ dependencies = [
     "wandb",
     "omegaconf",
     "tqdm",
+    "torch==2.6.0",
+    "torchvision==0.21.0",
+    "torchaudio==2.6.0",
     "matplotlib",
     "pytest",
     "rich",
 ]
 
-[project.optional-dependencies]
+[dependency-groups]
 optional = [
     "bitsandbytes==0.48.1",
     "vllm==0.8.5.post1",
     "flash-attn==2.8.3",
 ]
+
+evaluation = [
+    "lm_eval[ifeval,math] @ git+https://github.com/ZHZisZZ/lm-evaluation-harness.git@dllm",
+]
+
+[tool.uv.sources]
+torch = [
+    { index = "pytorch-cu124", marker = "sys_platform == 'linux' or sys_platform == 'win32'" },
+]
+torchvision = [
+    { index = "pytorch-cu124", marker = "sys_platform == 'linux' or sys_platform == 'win32'" },
+]
+torchaudio = [
+    { index = "pytorch-cu124", marker = "sys_platform == 'linux' or sys_platform == 'win32'" },
+]
+
+[[tool.uv.index]]
+name = "pytorch-cu124"
+url = "https://download.pytorch.org/whl/cu124"
+explicit = true
 
 [tool.black]
 line-length = 88

@@ -7,7 +7,7 @@ Run: Not runnable directly; use pipeline eval entrypoints (e.g. dllm.pipelines.l
 """
 
 import dataclasses
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 import accelerate
 import torch
@@ -18,6 +18,7 @@ from tqdm import tqdm
 import dllm
 from dllm.core.samplers import BaseSampler, BaseSamplerConfig
 from dllm.utils.configs import ModelArguments
+from dllm.utils.utils import get_default_torch_device
 
 
 @dataclass
@@ -25,7 +26,7 @@ class BaseEvalConfig:
     """Minimal config for base eval: device and batch_size."""
 
     pretrained: str = ""
-    device: str = "cuda"
+    device: str = field(default_factory=get_default_torch_device)
     batch_size: int = 1
 
     def get_model_config(self, pretrained: str):
@@ -97,11 +98,11 @@ class BaseEvalHarness(LM):
         # ── Device placement ─────────────────────────────────────
         if accelerator.num_processes > 1:
             self.model = accelerator.prepare(self.model)
-            self.device = accelerator.device
+            self._device = accelerator.device
             self.accelerator = accelerator
         else:
             self.model = self.model.to(device)
-            self.device = torch.device(device)
+            self._device = torch.device(device)
             self.accelerator = None
 
         self.batch_size = int(kwargs.get("batch_size", eval_config.batch_size))

@@ -30,6 +30,7 @@ from transformers import PreTrainedModel
 from transformers.modeling_outputs import CausalLMOutputWithPast
 from transformers.models.auto import AutoModel
 from transformers.cache_utils import Cache
+from dllm.utils.utils import get_default_torch_device
 
 from .configuration_llada import (
     LLaDAConfig,
@@ -194,7 +195,7 @@ def _non_meta_init_device(config: ModelConfig) -> torch.device:
     if config.init_device is not None and config.init_device != "meta":
         return torch.device(config.init_device)
     else:
-        return torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        return torch.device(get_default_torch_device())
 
 
 class Dropout(nn.Dropout):
@@ -1113,8 +1114,9 @@ class LLaDAModel(LLaDAPreTrainedModel):
         ):
             raise Exception("n layers must be divisible by block group size")
 
-        torch.backends.cuda.enable_flash_sdp(True)
-        torch.backends.cuda.enable_mem_efficient_sdp(False)  # this is super slow so make sure torch won't use it
+        if torch.cuda.is_available():
+            torch.backends.cuda.enable_flash_sdp(True)
+            torch.backends.cuda.enable_mem_efficient_sdp(False)  # this is super slow so make sure torch won't use it
 
         self.transformer = nn.ModuleDict(
             dict(
@@ -1456,8 +1458,7 @@ class LLaDAModelLM(LLaDAPreTrainedModel):
 
         if not model:
             model_config = create_model_config_from_pretrained_config(config)
-            # Initialize model (always on CPU to start with so we don't run out of GPU memory).
-            model_config.init_device = "cuda"
+            model_config.init_device = get_default_torch_device()
             self.model = LLaDAModel(model_config, init_params=init_params)
         else:
             self.model = model
